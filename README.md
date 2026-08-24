@@ -11,7 +11,10 @@ conducting/magnetic oxides: LCMO, LSMO, LaNiO₃, SrRuO₃, SrVO₃, and SrMoO�
 
 ```bash
 pip install matplotlib numpy
-python lattice_number_line.py     # writes lattice_number_line.png / .svg
+python lattice_number_line.py          # prints the data table, then opens an
+                                       # interactive window — save any view
+                                       # via the toolbar's disk icon
+python lattice_number_line.py --save   # additionally writes PNG + SVG files
 ```
 
 Customize by editing the top of `lattice_number_line.py`:
@@ -19,9 +22,11 @@ Customize by editing the top of `lattice_number_line.py`:
 - `RANGE` — the Å window to display (materials outside it are filtered out
   automatically; the dict already contains LaAlO₃, NdScO₃, and PrScO₃ for a
   wider window).
+- `BST_Y` — vertical position of the (Ba,Sr)TiO₃ solid-solution bar (the
+  number line is at y = 0; film labels reach up to about y = 0.9, so ~1.0–1.25
+  floats the bar above them and smaller values pull it toward the line).
 - `MATERIALS` — add a `Material(label, a, category, note)` entry; near-coincident
   entries are automatically staggered onto tiers so labels never collide.
-- `RANGES` — solid-solution spans drawn as horizontal arrows (BST, PZT).
 - `misfit(film_a, substrate_a)` — helper returning the biaxial misfit strain (%).
 
 ## Where the numbers come from (and why not Materials Project)

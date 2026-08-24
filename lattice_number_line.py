@@ -21,8 +21,11 @@ spacing between neighboring scandate substrates. Good primary sources:
 
 Usage
 -----
-    python lattice_number_line.py            # writes PNG + SVG, prints table
-Edit RANGE, or add entries to MATERIALS, to customize.
+    python lattice_number_line.py            # prints the data table, then
+                                             # opens an interactive window
+                                             # (save via the toolbar's disk icon)
+    python lattice_number_line.py --save     # additionally writes PNG + SVG
+Edit RANGE, BST_Y, or the MATERIALS list to customize.
 """
 
 from dataclasses import dataclass
@@ -94,10 +97,15 @@ MATERIALS = [
 ]
 
 # Solid-solution films drawn as horizontal range arrows above the film labels.
-# (label, a_min, a_max, open_ended_right)
+# BST_Y sets the height of the (Ba,Sr)TiO3 bar in axis data units: the number
+# line sits at y = 0 and the film label tips reach up to about y = 0.9, so
+# values around 1.0-1.25 float the bar above the labels; smaller values pull
+# it down toward the line.
+BST_Y = 1.06
+
+# (label, a_min, a_max, open_ended_right, y_position)
 RANGES = [
-    ("(Ba,Sr)TiO$_3$",  3.905, 3.994, False),   # SrTiO3 -> BaTiO3 (cubic extrapolated)
-    ("Pb(Zr,Ti)O$_3$",  3.904, 4.13,  True),    # PbTiO3 -> PbZrO3-rich (extends past window)
+    ("(Ba,Sr)TiO$_3$",  3.905, 3.994, False, BST_Y),  # SrTiO3 -> BaTiO3
 ]
 
 
@@ -153,7 +161,8 @@ def make_figure():
     lo, hi = RANGE
     fig, ax = plt.subplots(figsize=(15, 7.5))
     ax.set_xlim(lo - 0.006, hi + 0.006)
-    ax.set_ylim(-1.0, 1.35)
+    y_top = max([1.35] + [r[4] + 0.15 for r in RANGES])
+    ax.set_ylim(-1.0, y_top)
     ax.axis("off")
 
     # ---- The number line with major/minor ticks --------------------------
@@ -180,8 +189,7 @@ def make_figure():
                     fontsize=10.5, color=c, zorder=4)
 
     # ---- Solid-solution range arrows -------------------------------------
-    for i, (label, a0, a1, open_right) in enumerate(RANGES):
-        y = 1.06 + 0.13 * i
+    for label, a0, a1, open_right, y in RANGES:
         x0, x1 = max(a0, lo), min(a1, hi)
         style = "-|>" if (open_right and a1 > hi) else "|-|,widthA=0.35,widthB=0.35"
         ax.annotate("", xy=(x1, y), xytext=(x0, y),
@@ -220,23 +228,38 @@ def misfit(film_a, substrate_a):
     return 100.0 * (substrate_a - film_a) / film_a
 
 
+def _plain(label):
+    return (label.replace("$", "").replace("_", "").replace("{", "")
+            .replace("}", ""))
+
+
 def print_table():
-    print(f"{'material':<22}{'a_pc (A)':>10}  category")
-    for m in sorted(MATERIALS, key=lambda m: m.a):
-        mark = " " if in_range(m) else "*"
-        plain = (m.label.replace("$", "").replace("_", "").replace("{", "")
-                 .replace("}", ""))
-        print(f"{plain:<22}{m.a:>10.3f}{mark} {m.category}")
-    print("(* = outside plotted range)")
+    """Table of every lattice constant drawn on the number line."""
+    shown = sorted((m for m in MATERIALS if in_range(m)), key=lambda m: m.a)
+    w = ("material", "a_pc (Å)", "category", "note")
+    print(f"Lattice constants on the line ({RANGE[0]:.2f}-{RANGE[1]:.2f} Å)")
+    print(f"{w[0]:<14}{w[1]:>10}  {w[2]:<11}{w[3]}")
+    print("-" * 78)
+    for m in shown:
+        print(f"{_plain(m.label):<14}{m.a:>10.3f}  {m.category:<11}{m.note}")
+    for label, a0, a1, _open, _y in RANGES:
+        print(f"{_plain(label):<14}{a0:>6.3f}-{a1:.3f}  {'range':<11}"
+              "solid-solution span")
+    omitted = [m for m in MATERIALS if not in_range(m)]
+    if omitted:
+        names = ", ".join(f"{_plain(m.label)} ({m.a:.3f})" for m in omitted)
+        print(f"\nIn the data set but outside the plotted range: {names}")
 
 
 if __name__ == "__main__":
+    import sys
     print_table()
-    sto = 3.905
-    print(f"\nExample: misfit of LCMO on SrTiO3 = "
-          f"{misfit(3.858, sto):+.2f} % (tensile)")
     fig = make_figure()
-    for ext in ("png", "svg"):
-        fig.savefig(f"lattice_number_line.{ext}", dpi=300,
-                    bbox_inches="tight")
-        print(f"wrote lattice_number_line.{ext}")
+    if "--save" in sys.argv:
+        for ext in ("png", "svg"):
+            fig.savefig(f"lattice_number_line.{ext}", dpi=300,
+                        bbox_inches="tight")
+            print(f"wrote lattice_number_line.{ext}")
+    # Interactive window; save any view via the toolbar's disk icon.
+    import matplotlib.pyplot as plt
+    plt.show()
