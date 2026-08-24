@@ -1,11 +1,16 @@
 # Lattice-constant number line for PLD
 
 A number-line visualization of room-temperature **pseudocubic lattice constants**
-of perovskite substrates and film materials in the 3.80–4.00 Å window, in the
+of perovskite substrates and film materials in the 3.80–4.01 Å window, in the
 style of the classic figure from Schlom *et al.*, *Annu. Rev. Mater. Res.* **37**,
 589 (2007). Substrates point up at the line from below; films point down from
-above. Beyond the materials in the original figure, it adds PLD-relevant
-conducting/magnetic oxides: LCMO, LSMO, LaNiO₃, SrRuO₃, SrVO₃, and SrMoO₃.
+above; labeled marks every 0.05 Å. Beyond the materials in the original figure,
+it adds PLD-relevant conducting/magnetic oxides: nickelates (LaNiO₃, PrNiO₃,
+NdNiO₃), manganites across Sr doping (LaMnO₃, LSMO x = 0.2/0.3/0.5, SrMnO₃,
+plus LCMO), ruthenates (CaRuO₃, SrRuO₃, cubic BaRuO₃), the iridate SrIrO₃,
+titanates (CaTiO₃ alongside SrTiO₃/EuTiO₃/BaTiO₃/PbTiO₃), SrVO₃, and SrMoO₃.
+(The window ends at 4.01 rather than 4.00 so cubic BaRuO₃ at 4.006 Å and
+NdScO₃ at 4.008 Å stay on the line.)
 
 ## Usage
 
@@ -20,8 +25,12 @@ python lattice_number_line.py --save   # additionally writes PNG + SVG files
 Customize by editing the top of `lattice_number_line.py`:
 
 - `RANGE` — the Å window to display (materials outside it are filtered out
-  automatically; the dict already contains LaAlO₃, NdScO₃, and PrScO₃ for a
-  wider window).
+  automatically; the dict already contains LaAlO₃ and PrScO₃ for a wider
+  window).
+- `COLOR_SCHEME` — `"category"` (default: four colors distinguishing standard
+  substrates, scandates, ferroelectric films, and conducting films) or
+  `"simple"` (two colors: one for all substrates, one for all films; the
+  solid-solution bar keeps its own color in both schemes).
 - `BST_Y` — vertical position of the (Ba,Sr)TiO₃ solid-solution bar (the
   number line is at y = 0; film labels reach up to about y = 0.9, so ~1.0–1.25
   floats the bar above them and smaller values pull it toward the line).

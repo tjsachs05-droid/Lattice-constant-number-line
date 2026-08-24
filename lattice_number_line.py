@@ -34,18 +34,46 @@ from dataclasses import dataclass
 # Configuration
 # --------------------------------------------------------------------------
 
-RANGE = (3.80, 4.00)          # Angstrom window to display
+RANGE = (3.80, 4.01)          # Angstrom window (4.01 keeps BaRuO3 and NdScO3 in)
 MIN_LABEL_SEP = 0.0065        # Angstrom; closer neighbors get staggered tiers
 
-# Category -> (side of line, color).  Palette is a colorblind-safe
-# Okabe-Ito subset (validated: adjacent-pair CVD deltaE >= 8.5).
+# Category -> side of the line and legend label.
 CATEGORIES = {
-    "substrate":  dict(side="below", color="#0072B2", label="Substrates (standard)"),
-    "scandate":   dict(side="below", color="#009E73", label="Substrates (REScO$_3$ series)"),
-    "film_fe":    dict(side="above", color="#E69F00", label="Films: ferroelectric / dielectric"),
-    "film_cond":  dict(side="above", color="#CC79A7", label="Films: conducting / magnetic"),
+    "substrate":  dict(side="below", label="Substrates (standard)"),
+    "scandate":   dict(side="below", label="Substrates (REScO$_3$ series)"),
+    "film_fe":    dict(side="above", label="Films: ferroelectric / dielectric"),
+    "film_cond":  dict(side="above", label="Films: conducting / magnetic"),
+}
+
+# Pick the color scheme here.  "category" colors the four categories
+# separately; "simple" uses one color for all substrates and one for all
+# films (the solid-solution bar keeps RANGE_COLOR in both).  Colors are a
+# colorblind-safe Okabe-Ito subset (validated: adjacent-pair CVD dE >= 8.5).
+COLOR_SCHEME = "category"     # "category" or "simple"
+
+COLOR_SCHEMES = {
+    "category": {"substrate": "#0072B2", "scandate": "#009E73",
+                 "film_fe": "#E69F00", "film_cond": "#CC79A7"},
+    "simple":   {"substrate": "#0072B2", "scandate": "#0072B2",
+                 "film_fe": "#009E73", "film_cond": "#009E73"},
 }
 RANGE_COLOR = "#D55E00"       # solid-solution range arrows
+
+
+def category_color(category):
+    return COLOR_SCHEMES[COLOR_SCHEME][category]
+
+
+def legend_entries():
+    """(label, color) pairs matching the active color scheme."""
+    if COLOR_SCHEME == "simple":
+        entries = [("Substrates", COLOR_SCHEMES["simple"]["substrate"]),
+                   ("Films", COLOR_SCHEMES["simple"]["film_fe"])]
+    else:
+        entries = [(v["label"], category_color(k))
+                   for k, v in CATEGORIES.items()]
+    entries.append(("Solid-solution range", RANGE_COLOR))
+    return entries
 
 
 @dataclass
@@ -76,7 +104,7 @@ MATERIALS = [
     Material("GdScO$_3$",      3.968, "scandate"),
     Material("EuScO$_3$",      3.978, "scandate", "not sold commercially; (Sm,Gd)ScO3 mixed crystals substitute (Klimm 2020)"),
     Material("SmScO$_3$",      3.987, "scandate"),
-    Material("NdScO$_3$",      4.008, "scandate", "outside default range"),
+    Material("NdScO$_3$",      4.008, "scandate"),
     Material("PrScO$_3$",      4.020, "scandate", "outside default range"),
     # -- Films: ferroelectric / dielectric (from the Schlom figure) --------
     Material("Bi$_4$Ti$_3$O$_{12}$",    3.85,  "film_fe", "Aurivillius, avg in-plane pseudo-perovskite"),
@@ -86,13 +114,29 @@ MATERIALS = [
     Material("BiFeO$_3$",               3.965, "film_fe", "rhombohedral pseudocubic; multiferroic"),
     Material("BiMnO$_3$",               3.99,  "film_fe", "highly distorted monoclinic, approx. pseudocubic"),
     Material("BaTiO$_3$",               3.992, "film_fe", "tetragonal a (c = 4.036)"),
+    # -- Films: other titanates ---------------------------------------------
+    Material("CaTiO$_3$",               3.824, "film_fe", "orthorhombic, (V/4)^(1/3); incipient ferroelectric"),
     # -- Films: conducting / magnetic oxides (electrodes, manganites, ...) -
+    # Manganites La(1-x)Sr(x)MnO3 -- a_pc shrinks with Sr doping
+    Material("LaMnO$_3$",               3.935, "film_cond", "Jahn-Teller orthorhombic, (V/4)^(1/3); parent manganite"),
+    Material("LSMO $x$=0.2",            3.88,  "film_cond", "La0.8Sr0.2MnO3, rhombohedral pseudocubic (approx.)"),
+    Material("LSMO $x$=0.3",            3.876, "film_cond", "La0.67Sr0.33MnO3, rhombohedral pseudocubic (~3.87-3.88)"),
+    Material("LSMO $x$=0.5",            3.86,  "film_cond", "La0.5Sr0.5MnO3, tetragonal (approx.; ~3.85-3.87 in lit.)"),
+    Material("SrMnO$_3$",               3.805, "film_cond", "cubic perovskite polymorph (4H hexagonal ambient-stable)"),
+    Material("LCMO",                    3.858, "film_cond", "La0.67Ca0.33MnO3, orthorhombic pseudocubic; CMR manganite"),
+    # Nickelates
     Material("LaNiO$_3$",               3.838, "film_cond", "rhombohedral pseudocubic; metallic electrode"),
+    Material("PrNiO$_3$",               3.820, "film_cond", "orthorhombic pseudocubic; MIT nickelate"),
+    Material("NdNiO$_3$",               3.807, "film_cond", "orthorhombic pseudocubic; MIT nickelate"),
+    # Ruthenates
+    Material("SrRuO$_3$",               3.93,  "film_cond", "orthorhombic pseudocubic; metallic electrode"),
+    Material("CaRuO$_3$",               3.84,  "film_cond", "orthorhombic, (V/4)^(1/3) (3.84-3.85 in lit.)"),
+    Material("BaRuO$_3$",               4.006, "film_cond", "cubic perovskite polymorph (high-pressure phase; 4H/9R ambient-stable)"),
+    # Iridates
+    Material("SrIrO$_3$",               3.96,  "film_cond", "orthorhombic perovskite polymorph, pseudocubic; semimetal"),
+    # Other conductors
     Material("SrVO$_3$",                3.842, "film_cond", "cubic; correlated metal / transparent conductor"),
     Material("YBa$_2$Cu$_3$O$_7$",      3.855, "film_cond", "avg of a = 3.82, b = 3.89"),
-    Material("LCMO",                    3.858, "film_cond", "La0.67Ca0.33MnO3, orthorhombic pseudocubic; CMR manganite"),
-    Material("LSMO",                    3.876, "film_cond", "La0.67Sr0.33MnO3, rhombohedral pseudocubic (~3.87-3.88)"),
-    Material("SrRuO$_3$",               3.93,  "film_cond", "orthorhombic pseudocubic; metallic electrode"),
     Material("SrMoO$_3$",               3.976, "film_cond", "cubic; lowest-resistivity oxide metal"),
 ]
 
@@ -113,7 +157,7 @@ RANGES = [
 # Layout: stagger near-coincident labels onto tiers (pure logic, testable)
 # --------------------------------------------------------------------------
 
-def assign_tiers(xs, min_sep=MIN_LABEL_SEP, n_tiers=3):
+def assign_tiers(xs, min_sep=MIN_LABEL_SEP, n_tiers=4):
     """Greedy tier assignment for one side of the line.
 
     xs: sorted list of x positions. Returns a list of tier indices (0 = closest
@@ -156,7 +200,6 @@ def compute_layout():
 def make_figure():
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
-    import numpy as np
 
     lo, hi = RANGE
     fig, ax = plt.subplots(figsize=(15, 7.5))
@@ -166,9 +209,13 @@ def make_figure():
     ax.axis("off")
 
     # ---- The number line with major/minor ticks --------------------------
+    # Integer loop: np.arange floats accumulate rounding error, which made
+    # `(x*100) % 5` misclassify every major tick except the first, so only
+    # "3.80" was ever labeled. i is exact hundredths of an Angstrom.
     ax.hlines(0, lo, hi, color="black", lw=1.8, zorder=3)
-    for x in np.arange(lo, hi + 1e-9, 0.01):
-        major = abs((x * 100) % 5) < 1e-6           # every 0.05 A
+    for i in range(round(lo * 100), round(hi * 100) + 1):
+        x = i / 100
+        major = i % 5 == 0                          # labeled mark every 0.05 A
         ax.vlines(x, -0.035 if major else -0.02, 0.035 if major else 0.02,
                   color="black", lw=1.2 if major else 0.7, zorder=3)
         if major:
@@ -179,7 +226,7 @@ def make_figure():
     base, step = 0.16, 0.24                          # arrow lengths per tier
     for side, sign in (("below", -1), ("above", +1)):
         for m, tier in compute_layout()[side]:
-            c = CATEGORIES[m.category]["color"]
+            c = category_color(m.category)
             y_tip = sign * (base + tier * step)
             ax.annotate("", xy=(m.a, 0), xytext=(m.a, y_tip), zorder=2,
                         arrowprops=dict(arrowstyle="-|>", color=c, lw=1.6,
@@ -208,10 +255,8 @@ def make_figure():
                  fontsize=14, pad=18)
     fig.text(0.5, 0.015, "Pseudocubic lattice constant $a$ (Å)",
              ha="center", fontsize=12)
-    handles = [Line2D([], [], color=v["color"], lw=3, label=v["label"])
-               for v in CATEGORIES.values()]
-    handles.append(Line2D([], [], color=RANGE_COLOR, lw=3,
-                          label="Solid-solution range"))
+    handles = [Line2D([], [], color=color, lw=3, label=label)
+               for label, color in legend_entries()]
     ax.legend(handles=handles, loc="lower right", frameon=False, fontsize=10,
               bbox_to_anchor=(1.0, -0.04))
 
