@@ -8,7 +8,11 @@ above; labeled marks every 0.05 Å. Beyond the materials in the original figure,
 it adds PLD-relevant conducting/magnetic oxides: nickelates (LaNiO₃, PrNiO₃,
 NdNiO₃), manganites across Sr doping (LaMnO₃, LSMO x = 0.2/0.3/0.5, SrMnO₃,
 plus LCMO), ruthenates (CaRuO₃, SrRuO₃, cubic BaRuO₃), the iridate SrIrO₃,
-titanates (CaTiO₃ alongside SrTiO₃/EuTiO₃/BaTiO₃/PbTiO₃), SrVO₃, and SrMoO₃.
+titanates (CaTiO₃ alongside SrTiO₃/EuTiO₃/BaTiO₃/PbTiO₃), SrVO₃, SrMoO₃, and
+the n = 2 Ruddlesden–Popper (327) bilayer phases La₃Ni₂O₇, Pr₃Ni₂O₇, Nd₃Ni₂O₇,
+and Sr₃Ir₂O₇ — for these layered orthorhombic/tetragonal phases the plotted
+value is the **in-plane pseudo-tetragonal lattice constant** (avg(a,b)/√2 of
+the orthorhombic cell), the number that matters for epitaxy.
 (The window ends at 4.01 rather than 4.00 so cubic BaRuO₃ at 4.006 Å and
 NdScO₃ at 4.008 Å stay on the line.)
 

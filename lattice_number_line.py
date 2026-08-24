@@ -134,6 +134,13 @@ MATERIALS = [
     Material("BaRuO$_3$",               4.006, "film_cond", "cubic perovskite polymorph (high-pressure phase; 4H/9R ambient-stable)"),
     # Iridates
     Material("SrIrO$_3$",               3.96,  "film_cond", "orthorhombic perovskite polymorph, pseudocubic; semimetal"),
+    # Ruddlesden-Popper n=2 (327) bilayer phases -- the value plotted is the
+    # in-plane pseudo-tetragonal lattice constant (avg(a,b)/sqrt(2) of the
+    # orthorhombic cell, or tetragonal a), which is what matters for epitaxy
+    Material("La$_3$Ni$_2$O$_7$",       3.833, "film_cond", "RP-327, orthorhombic Amam (a=5.41, b=5.46), in-plane pseudo-tetragonal; SC under pressure/strain"),
+    Material("Pr$_3$Ni$_2$O$_7$",       3.82,  "film_cond", "RP-327, orthorhombic, in-plane (approx.; ~1% below La3Ni2O7)"),
+    Material("Nd$_3$Ni$_2$O$_7$",       3.81,  "film_cond", "RP-327, orthorhombic, in-plane (approx.; hard to stabilize in bulk)"),
+    Material("Sr$_3$Ir$_2$O$_7$",       3.896, "film_cond", "RP-327, tetragonal I4/mmm approx., in-plane a; spin-orbit Mott bilayer"),
     # Other conductors
     Material("SrVO$_3$",                3.842, "film_cond", "cubic; correlated metal / transparent conductor"),
     Material("YBa$_2$Cu$_3$O$_7$",      3.855, "film_cond", "avg of a = 3.82, b = 3.89"),
@@ -177,19 +184,43 @@ def assign_tiers(xs, min_sep=MIN_LABEL_SEP, n_tiers=4):
     return tiers
 
 
+def spread_tails(xs, thresh=0.0035):
+    """Slant arrow tails apart where entries (nearly) coincide in x.
+
+    xs: sorted x positions. Entries whose gap to the previous one is below
+    `thresh` are grouped, and each group's tails are fanned out around the
+    group center with `thresh` spacing (the arrow tip stays at the true x).
+    Returns the tail x position for each entry.
+    """
+    tails = list(xs)
+    i = 0
+    while i < len(xs):
+        j = i
+        while j + 1 < len(xs) and xs[j + 1] - xs[j] < thresh:
+            j += 1
+        if j > i:                      # group of j-i+1 near-coincident entries
+            center = sum(xs[i:j + 1]) / (j - i + 1)
+            for k in range(i, j + 1):
+                tails[k] = center + (k - i - (j - i) / 2) * thresh
+        i = j + 1
+    return tails
+
+
 def in_range(m, lo=RANGE[0], hi=RANGE[1]):
     return lo <= m.a <= hi
 
 
 def compute_layout():
-    """Split materials by side, sort, and assign tiers. Returns dict."""
+    """Split materials by side and sort; assign label tiers and tail x
+    positions. Returns {side: [(material, tier, x_tail), ...]}."""
     shown = [m for m in MATERIALS if in_range(m)]
     layout = {}
     for side in ("below", "above"):
         ms = sorted((m for m in shown
                      if CATEGORIES[m.category]["side"] == side),
                     key=lambda m: m.a)
-        layout[side] = list(zip(ms, assign_tiers([m.a for m in ms])))
+        xs = [m.a for m in ms]
+        layout[side] = list(zip(ms, assign_tiers(xs), spread_tails(xs)))
     return layout
 
 
@@ -225,13 +256,13 @@ def make_figure():
     # ---- Arrows + labels, staggered by tier ------------------------------
     base, step = 0.16, 0.24                          # arrow lengths per tier
     for side, sign in (("below", -1), ("above", +1)):
-        for m, tier in compute_layout()[side]:
+        for m, tier, x_tail in compute_layout()[side]:
             c = category_color(m.category)
             y_tip = sign * (base + tier * step)
-            ax.annotate("", xy=(m.a, 0), xytext=(m.a, y_tip), zorder=2,
+            ax.annotate("", xy=(m.a, 0), xytext=(x_tail, y_tip), zorder=2,
                         arrowprops=dict(arrowstyle="-|>", color=c, lw=1.6,
                                         mutation_scale=14, shrinkA=0, shrinkB=2))
-            ax.text(m.a, y_tip + sign * 0.02, m.label, rotation=90,
+            ax.text(x_tail, y_tip + sign * 0.02, m.label, rotation=90,
                     ha="center", va="bottom" if sign > 0 else "top",
                     fontsize=10.5, color=c, zorder=4)
 
